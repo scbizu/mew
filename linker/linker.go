@@ -6,6 +6,8 @@ import (
 	"go/token"
 	"io/ioutil"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Linker defines the link pkg config
@@ -40,8 +42,9 @@ func (l *Linker) GetAllPkgNames(allowDup bool, excludeDirs []string) (pkgNames [
 			return nil, fsErr
 		}
 		for _, f := range fs {
-			for _, file := range f.Files {
+			for fk, file := range f.Files {
 				for _, s := range file.Imports {
+					logrus.WithField("file", fk).Infof("Get PKG:%s", s.Path.Value)
 					pkgNames = append(pkgNames, s.Path.Value)
 				}
 			}

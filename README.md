@@ -22,6 +22,6 @@ Flags:
 ### e.g.
 
 ```shell
-❯ mew -r github.com/scbizu/mew  -g mew
-["github.com/scbizu/mew/cmd" "github.com/scbizu/mew/filter" "github.com/scbizu/mew/linker"]
+❯ mew -r github.com/scbizu/mew  -g mew -e vendor -e filter -e .git
+
 ```

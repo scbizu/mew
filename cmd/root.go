@@ -67,5 +67,5 @@ func init() {
 	}
 	RootCmd.Flags().StringVarP(&repoName, "repo", "r", "", "input repo name")
 	RootCmd.Flags().StringVarP(&grep, "grep", "g", "", "grep the pkg list")
-	RootCmd.Flags().StringArrayVarP(&excludeDirs, "ed", "e", []string{}, "exclude the dir")
+	RootCmd.Flags().StringArrayVarP(&excludeDirs, "ed", "e", []string{"vendor", ".git"}, "exclude the dir")
 }
