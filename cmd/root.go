@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -29,6 +30,7 @@ var repoName string
 var gopath string
 var grep string
 var excludeDirs []string
+var isShowJSON bool
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -43,7 +45,15 @@ var RootCmd = &cobra.Command{
 		}
 		pkgFilter := filter.NewFilter(pkgs)
 		pkgs = pkgFilter.Grep(grep)
-		fmt.Println(pkgs)
+		if isShowJSON {
+			jsonRes, err := json.Marshal(pkgs)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			fmt.Println(string(jsonRes))
+		} else {
+			fmt.Println(pkgs)
+		}
 		return
 	},
 }
@@ -68,4 +78,5 @@ func init() {
 	RootCmd.Flags().StringVarP(&repoName, "repo", "r", "", "input repo name")
 	RootCmd.Flags().StringVarP(&grep, "grep", "g", "", "grep the pkg list")
 	RootCmd.Flags().StringArrayVarP(&excludeDirs, "ed", "e", []string{"vendor", ".git"}, "exclude the dir")
+	RootCmd.Flags().BoolVar(&isShowJSON, "json", false, "show json format")
 }
