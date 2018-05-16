@@ -16,12 +16,25 @@ type Linker struct {
 	RepoPath string
 }
 
+func init() {
+	initLogLevel()
+}
+
 // NewLinker inits the linker
 func NewLinker(gopath string, repoRootPath string) *Linker {
 	return &Linker{
 		GoPath:   gopath,
 		RepoPath: repoRootPath,
 	}
+}
+
+func initLogLevel() {
+	logrus.SetLevel(logrus.InfoLevel)
+}
+
+// SetLinkerLogLevel sets log lv.
+func SetLinkerLogLevel(lv logrus.Level) {
+	logrus.SetLevel(lv)
 }
 
 // GetAllPkgNames get repo related pkgs
@@ -44,7 +57,7 @@ func (l *Linker) GetAllPkgNames(allowDup bool, excludeDirs []string) (pkgNames [
 		for _, f := range fs {
 			for fk, file := range f.Files {
 				for _, s := range file.Imports {
-					logrus.WithField("file", fk).Infof("Get PKG:%s", s.Path.Value)
+					logrus.WithField("file", fk).Debugf("Get PKG:%s", s.Path.Value)
 					pkgNames = append(pkgNames, s.Path.Value)
 				}
 			}
