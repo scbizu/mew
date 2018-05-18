@@ -70,6 +70,11 @@ func (l *Linker) GetAllPkgNames(allowDup bool, excludeDirs []string) (pkgNames [
 	return
 }
 
+// GetInvokeSrcMap get pkg names(as value) with his import file(as key)
+func (l *Linker) GetInvokeSrcMap() (map[string][]string, error) {
+	return nil, nil
+}
+
 func removeDupPkgNames(pkgNames []string) []string {
 	resMap := make(map[string]struct{}, len(pkgNames))
 	var j int

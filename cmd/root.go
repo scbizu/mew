@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/scbizu/mew/drawer"
 	"github.com/scbizu/mew/filter"
 	"github.com/scbizu/mew/linker"
 	"github.com/spf13/cobra"
@@ -31,6 +32,7 @@ var gopath string
 var grep string
 var excludeDirs []string
 var isShowJSON bool
+var dumpGraph string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -45,6 +47,11 @@ var RootCmd = &cobra.Command{
 		}
 		pkgFilter := filter.NewFilter(pkgs)
 		pkgs = pkgFilter.Grep(grep)
+
+		if err = drawer.DrawWithSliceAndSave(dumpGraph, repoName, pkgs); err != nil {
+			log.Fatalln(err.Error())
+		}
+
 		if isShowJSON {
 			jsonRes, err := json.Marshal(pkgs)
 			if err != nil {
@@ -79,4 +86,5 @@ func init() {
 	RootCmd.Flags().StringVarP(&grep, "grep", "g", "", "grep the pkg list")
 	RootCmd.Flags().StringArrayVarP(&excludeDirs, "ed", "e", []string{"vendor", ".git"}, "exclude the dir")
 	RootCmd.Flags().BoolVar(&isShowJSON, "json", false, "show json format")
+	RootCmd.Flags().StringVarP(&dumpGraph, "graph", "d", drawer.DefaultFileName, "dump graphviz graph")
 }
