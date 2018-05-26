@@ -1,18 +1,1 @@
-digraph G {
-	"github.com/scbizu/mew"->"github.com/scbizu/mew/cmd";
-	"github.com/scbizu/mew"->"github.com/scbizu/mew/drawer";
-	"github.com/scbizu/mew"->"github.com/scbizu/mew/filter";
-	"github.com/scbizu/mew"->"github.com/scbizu/mew/linker";
-	"github.com/scbizu/mew"->"github.com/spf13/cobra";
-	"github.com/scbizu/mew"->"github.com/awalterschulze/gographviz";
-	"github.com/scbizu/mew"->"github.com/sirupsen/logrus";
-	"github.com/awalterschulze/gographviz";
-	"github.com/scbizu/mew";
-	"github.com/scbizu/mew/cmd";
-	"github.com/scbizu/mew/drawer";
-	"github.com/scbizu/mew/filter";
-	"github.com/scbizu/mew/linker";
-	"github.com/sirupsen/logrus";
-	"github.com/spf13/cobra";
-
-}
+error: "github.com/scbizu/mew/drawer" is not a node or a subgraph

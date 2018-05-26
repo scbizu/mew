@@ -1,4 +1,4 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2018 scnace scbizu@gmail.com
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 	"github.com/scbizu/mew/drawer"
 	"github.com/scbizu/mew/filter"
 	"github.com/scbizu/mew/linker"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +34,7 @@ var grep string
 var excludeDirs []string
 var isShowJSON bool
 var dumpGraph string
+var deepMode bool
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -41,28 +43,67 @@ var RootCmd = &cobra.Command{
 	Long:  `mew - Show your Go repo related pkgs`,
 	Run: func(cmd *cobra.Command, args []string) {
 		l := linker.NewLinker(gopath, repoName)
-		pkgs, err := l.GetAllPkgNames(false, excludeDirs)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		pkgFilter := filter.NewFilter(pkgs)
-		pkgs = pkgFilter.Grep(grep)
-
-		if err = drawer.DrawWithSliceAndSave(dumpGraph, repoName, pkgs); err != nil {
-			log.Fatalln(err.Error())
-		}
-
-		if isShowJSON {
-			jsonRes, err := json.Marshal(pkgs)
-			if err != nil {
-				log.Fatalln(err)
+		if deepMode {
+			if jsonRes := handlePKGMap(l, excludeDirs, grep, dumpGraph, isShowJSON); jsonRes != "" {
+				fmt.Println(jsonRes)
 			}
-			fmt.Println(string(jsonRes))
 		} else {
-			fmt.Println(pkgs)
+			if jsonRes := handlePKGSlice(l, excludeDirs, grep, dumpGraph, repoName, isShowJSON); jsonRes != "" {
+				fmt.Println(jsonRes)
+			}
 		}
+
 		return
 	},
+}
+
+func handlePKGMap(l *linker.Linker, excludeDirs []string, grep string, graphName string, isShowJSON bool) string {
+	var pkgMap map[string][]string
+	var err error
+	pkgMap, err = l.GetAllPKGNames(false, excludeDirs)
+	if err != nil {
+		logrus.Fatalln(err)
+	}
+
+	pkgMapFilter := filter.NewMapFilter(pkgMap)
+	pkgMapFilter.Grep(grep)
+
+	if err = drawer.DrawWithMapAndSave(graphName, pkgMap); err != nil {
+		logrus.Fatalln(err.Error())
+	}
+
+	if isShowJSON {
+		jsonRes, err := json.Marshal(pkgMap)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
+		return string(jsonRes)
+	}
+	return ""
+}
+
+func handlePKGSlice(l *linker.Linker, excludeDirs []string, grep string, graphName string, repo string, isShowJSON bool) string {
+	var pkgs []string
+	var err error
+	pkgs, err = l.GetLayerPKGNames(false, excludeDirs)
+	if err != nil {
+		logrus.Fatalln(err)
+	}
+	pkgFilter := filter.NewFilter(pkgs)
+	pkgs = pkgFilter.Grep(grep)
+
+	if err = drawer.DrawWithSliceAndSave(graphName, repo, pkgs); err != nil {
+		logrus.Fatalln(err.Error())
+	}
+
+	if isShowJSON {
+		jsonRes, err := json.Marshal(pkgs)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
+		return string(jsonRes)
+	}
+	return ""
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -86,5 +127,6 @@ func init() {
 	RootCmd.Flags().StringVarP(&grep, "grep", "g", "", "grep the pkg list")
 	RootCmd.Flags().StringArrayVarP(&excludeDirs, "ed", "e", []string{"vendor", ".git"}, "exclude the dir")
 	RootCmd.Flags().BoolVar(&isShowJSON, "json", false, "show json format")
+	RootCmd.Flags().BoolVar(&deepMode, "deep", false, "[Experimental feature]in deep mode,you will get all(include really all dependency) third party related pkg name")
 	RootCmd.Flags().StringVarP(&dumpGraph, "graph", "d", drawer.DefaultFileName, "dump graphviz graph")
 }

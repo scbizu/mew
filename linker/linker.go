@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -20,12 +21,18 @@ func init() {
 	initLogLevel()
 }
 
+var (
+	scannedRepo = make(map[string]bool)
+	pkgMap      = make(map[string][]string)
+)
+
 // NewLinker inits the linker
 func NewLinker(gopath string, repoRootPath string) *Linker {
-	return &Linker{
+	l := &Linker{
 		GoPath:   gopath,
 		RepoPath: repoRootPath,
 	}
+	return l
 }
 
 func initLogLevel() {
@@ -37,8 +44,38 @@ func SetLinkerLogLevel(lv logrus.Level) {
 	logrus.SetLevel(lv)
 }
 
-// GetAllPkgNames get repo related pkgs
-func (l *Linker) GetAllPkgNames(allowDup bool, excludeDirs []string) (pkgNames []string, err error) {
+// GetAllPKGNames gets the full layers packages names
+func (l *Linker) GetAllPKGNames(allowDup bool, excludeDirs []string) (map[string][]string, error) {
+
+	names, err := l.GetLayerPKGNames(allowDup, excludeDirs)
+	if err != nil {
+		return nil, err
+	}
+	logrus.Infof("pkgnames:[%v]", names)
+	for _, repo := range names {
+		if !isThirdPartyPackage(repo) {
+			continue
+		}
+		if _, ok := scannedRepo[repo]; ok {
+			logrus.Warnf("scanned repo:[%v]", repo)
+			continue
+		}
+		scannedRepo[repo] = true
+		logrus.Infof("repo path:%v,package:%v", l.RepoPath, repo)
+		pkgMap[l.RepoPath] = append(pkgMap[l.RepoPath], repo)
+		lk := NewLinker(l.GoPath, repo)
+		pkgMap, err = lk.GetAllPKGNames(allowDup, excludeDirs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return pkgMap, nil
+}
+
+// GetLayerPKGNames gets the layer(depends on the repo) package names
+// DO NOT SUPPORT GOROOT ENV
+func (l *Linker) GetLayerPKGNames(allowDup bool, excludeDirs []string) (pkgNames []string, err error) {
 	fset := token.NewFileSet()
 	fpath := fmt.Sprintf("%s/src/%s/", l.GoPath, l.RepoPath)
 	allDirs := []string{fpath}
@@ -58,7 +95,7 @@ func (l *Linker) GetAllPkgNames(allowDup bool, excludeDirs []string) (pkgNames [
 			for fk, file := range f.Files {
 				for _, s := range file.Imports {
 					logrus.WithField("file", fk).Debugf("Get PKG:%s", s.Path.Value)
-					pkgNames = append(pkgNames, s.Path.Value)
+					pkgNames = append(pkgNames, trimQuotation(s.Path.Value))
 				}
 			}
 		}
@@ -67,10 +104,28 @@ func (l *Linker) GetAllPkgNames(allowDup bool, excludeDirs []string) (pkgNames [
 		// remove duplicate elem
 		pkgNames = removeDupPkgNames(pkgNames)
 	}
+
 	return
 }
 
+func trimQuotation(pkgName string) string {
+	pkgName = strings.Replace(pkgName, `"`, ``, -1)
+	return pkgName
+}
+
+func isThirdPartyPackage(repo string) bool {
+	tpPrefixes := []string{"github.com"}
+	for _, p := range tpPrefixes {
+		ok := strings.HasPrefix(repo, p)
+		if ok {
+			return true
+		}
+	}
+	return false
+}
+
 // GetInvokeSrcMap get pkg names(as value) with his import file(as key)
+// TODO
 func (l *Linker) GetInvokeSrcMap() (map[string][]string, error) {
 	return nil, nil
 }
