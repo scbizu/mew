@@ -49,6 +49,12 @@ func (l *Linker) GetAllPKGNames(allowDup bool, excludeDirs []string) (map[string
 
 	names, err := l.GetLayerPKGNames(allowDup, excludeDirs)
 	if err != nil {
+		logrus.Errorf("err:%#v", err)
+		if os.IsNotExist(err) {
+			logrus.Warnf("[file not exists]:%v", err)
+			pkgMap[l.RepoPath] = []string{}
+			return pkgMap, nil
+		}
 		return nil, err
 	}
 	logrus.Infof("pkgnames:[%v]", names)
