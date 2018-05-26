@@ -44,7 +44,7 @@ var RootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		l := linker.NewLinker(gopath, repoName)
 		if deepMode {
-			if jsonRes := handlePKGMap(l, excludeDirs, grep, dumpGraph, isShowJSON); jsonRes != "" {
+			if jsonRes := handlePKGMap(l, excludeDirs, grep, dumpGraph, repoName, isShowJSON); jsonRes != "" {
 				fmt.Println(jsonRes)
 			}
 		} else {
@@ -57,7 +57,7 @@ var RootCmd = &cobra.Command{
 	},
 }
 
-func handlePKGMap(l *linker.Linker, excludeDirs []string, grep string, graphName string, isShowJSON bool) string {
+func handlePKGMap(l *linker.Linker, excludeDirs []string, grep string, graphName string, repo string, isShowJSON bool) string {
 	var pkgMap map[string][]string
 	var err error
 	pkgMap, err = l.GetAllPKGNames(false, excludeDirs)
@@ -68,7 +68,7 @@ func handlePKGMap(l *linker.Linker, excludeDirs []string, grep string, graphName
 	pkgMapFilter := filter.NewMapFilter(pkgMap)
 	pkgMapFilter.Grep(grep)
 
-	if err = drawer.DrawWithMapAndSave(graphName, pkgMap); err != nil {
+	if err = drawer.DrawWithMapAndSave(repo, graphName, pkgMap); err != nil {
 		logrus.Fatalln(err.Error())
 	}
 

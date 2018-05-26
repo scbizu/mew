@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/awalterschulze/gographviz"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -20,7 +21,7 @@ func DrawWithSlice(baseNode string, pkgNames []string) (string, error) {
 	g := gographviz.NewGraph()
 	g.SetName(GraphName)
 	g.SetDir(true)
-	paresedNodeName := string(parseBaseNodeName([]byte(baseNode)))
+	paresedNodeName := addQuotation(baseNode)
 	g.AddNode(GraphName, paresedNodeName, nil)
 	for _, name := range pkgNames {
 		g.AddNode(GraphName, name, nil)
@@ -42,23 +43,41 @@ func DrawWithSliceAndSave(filename string, baseNode string, pkgNames []string) e
 }
 
 // DrawWithMap returns DOT lang of a map
-func DrawWithMap(pkgMap map[string][]string) (string, error) {
+func DrawWithMap(baseNode string, pkgMap map[string][]string) (string, error) {
 	g := gographviz.NewGraph()
 	g.SetName(GraphName)
 	g.SetDir(true)
-	for repo, pkgs := range pkgMap {
-		paresedNodeName := string(parseBaseNodeName([]byte(repo)))
-		for _, pkg := range pkgs {
-			g.AddNode(GraphName, pkg, nil)
-			g.AddEdge(paresedNodeName, pkg, true, nil)
-		}
-	}
+
+	drawTree(g, baseNode, pkgMap)
+
 	return g.String(), nil
 }
 
+func drawTree(g *gographviz.Graph, base string, pkgMap map[string][]string) {
+
+	ps, ok := pkgMap[base]
+
+	if !ok || len(ps) == 0 {
+		return
+	}
+
+	g.AddNode(GraphName, addQuotation(base), nil)
+
+	for _, p := range ps {
+		g.AddNode(GraphName, addQuotation(p), nil)
+		if err := g.AddEdge(addQuotation(base), addQuotation(p), true, nil); err != nil {
+			logrus.Error(err)
+		}
+		drawTree(g, p, pkgMap)
+	}
+
+	return
+
+}
+
 // DrawWithMapAndSave draws the graph and save to current path by a map
-func DrawWithMapAndSave(filename string, pkgMap map[string][]string) error {
-	dotTree, err := DrawWithMap(pkgMap)
+func DrawWithMapAndSave(baseNode string, filename string, pkgMap map[string][]string) error {
+	dotTree, err := DrawWithMap(baseNode, pkgMap)
 	if err != nil {
 		return err
 	}
@@ -68,11 +87,11 @@ func DrawWithMapAndSave(filename string, pkgMap map[string][]string) error {
 	return nil
 }
 
-func parseBaseNodeName(baseNode []byte) []byte {
+func addQuotation(node string) string {
 	bs := []byte{'"'}
-	for _, b := range baseNode {
+	for _, b := range []byte(node) {
 		bs = append(bs, b)
 	}
 	bs = append(bs, '"')
-	return bs
+	return string(bs)
 }
