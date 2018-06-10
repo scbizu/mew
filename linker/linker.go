@@ -49,7 +49,6 @@ func (l *Linker) GetAllPKGNames(allowDup bool, excludeDirs []string) (map[string
 
 	names, err := l.GetLayerPKGNames(allowDup, excludeDirs)
 	if err != nil {
-		logrus.Errorf("err:%#v", err)
 		if os.IsNotExist(err) {
 			logrus.Warnf("[file not exists]:%v", err)
 			pkgMap[l.RepoPath] = []string{}
@@ -57,7 +56,7 @@ func (l *Linker) GetAllPKGNames(allowDup bool, excludeDirs []string) (map[string
 		}
 		return nil, err
 	}
-	logrus.Infof("pkgnames:[%v]", names)
+	logrus.Debugf("pkgnames:[%v]", names)
 	for _, repo := range names {
 		if !isThirdPartyPackage(repo) {
 			continue
@@ -67,7 +66,7 @@ func (l *Linker) GetAllPKGNames(allowDup bool, excludeDirs []string) (map[string
 			continue
 		}
 		scannedRepo[repo] = true
-		logrus.Infof("repo path:%v,package:%v", l.RepoPath, repo)
+		logrus.Debugf("repo path:%v,package:%v", l.RepoPath, repo)
 		pkgMap[l.RepoPath] = append(pkgMap[l.RepoPath], repo)
 		lk := NewLinker(l.GoPath, repo)
 		pkgMap, err = lk.GetAllPKGNames(allowDup, excludeDirs)
