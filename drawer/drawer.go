@@ -4,6 +4,7 @@ package drawer
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/awalterschulze/gographviz"
 	"github.com/sirupsen/logrus"
@@ -93,5 +94,10 @@ func addQuotation(node string) string {
 		bs = append(bs, b)
 	}
 	bs = append(bs, '"')
-	return string(bs)
+	return addNAfterSlash(string(bs))
+}
+
+// addNAfterSlash enter the newline after /
+func addNAfterSlash(nodeName string) string {
+	return strings.Replace(nodeName, "/", "/\n", -1)
 }
