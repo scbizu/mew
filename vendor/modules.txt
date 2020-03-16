@@ -13,6 +13,26 @@ github.com/inconshreveable/mousetrap
 ## explicit
 # github.com/onsi/gomega v1.9.0
 ## explicit
+# github.com/scylladb/go-set v1.0.2
+## explicit
+github.com/scylladb/go-set
+github.com/scylladb/go-set/b16set
+github.com/scylladb/go-set/b32set
+github.com/scylladb/go-set/b64set
+github.com/scylladb/go-set/b8set
+github.com/scylladb/go-set/f32set
+github.com/scylladb/go-set/f64set
+github.com/scylladb/go-set/i16set
+github.com/scylladb/go-set/i32set
+github.com/scylladb/go-set/i64set
+github.com/scylladb/go-set/i8set
+github.com/scylladb/go-set/iset
+github.com/scylladb/go-set/strset
+github.com/scylladb/go-set/u16set
+github.com/scylladb/go-set/u32set
+github.com/scylladb/go-set/u64set
+github.com/scylladb/go-set/u8set
+github.com/scylladb/go-set/uset
 # github.com/sirupsen/logrus v1.0.5
 ## explicit
 github.com/sirupsen/logrus

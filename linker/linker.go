@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	set "github.com/scylladb/go-set"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,6 +44,47 @@ func initLogLevel() {
 // SetLinkerLogLevel sets log lv.
 func SetLinkerLogLevel(lv logrus.Level) {
 	logrus.SetLevel(lv)
+}
+
+type Filter func([]string) []string
+
+type Searcher interface {
+	Filt(...Filter) Searcher
+	List() []string
+	Error() error
+}
+
+type SearchFilter struct {
+	err error
+	src []string
+}
+
+func (sf *SearchFilter) Error() error   { return sf.err }
+func (sf *SearchFilter) List() []string { return sf.src }
+func (sf *SearchFilter) Filt(fs ...Filter) Searcher {
+	for _, f := range fs {
+		sf.src = f(sf.src)
+	}
+	return sf
+}
+
+func (l *Linker) GetPackagesByFilter(allowDup bool, excludeDirs []string) Searcher {
+	sf := new(SearchFilter)
+	pkgsmap, err := l.GetAllPKGNames(allowDup, excludeDirs)
+	if err != nil {
+		sf.err = err
+	}
+	s := set.NewStringSet()
+	for _, pkgs := range pkgsmap {
+		for _, pkg := range pkgs {
+			if s.Has(pkg) {
+				continue
+			}
+			s.Add(pkg)
+		}
+	}
+	sf.src = s.List()
+	return sf
 }
 
 // GetAllPKGNames gets the full layers packages names
