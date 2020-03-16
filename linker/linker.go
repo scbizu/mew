@@ -15,6 +15,7 @@ import (
 type Linker struct {
 	GoPath   string
 	RepoPath string
+	FullPath string
 }
 
 func init() {
@@ -83,6 +84,9 @@ func (l *Linker) GetAllPKGNames(allowDup bool, excludeDirs []string) (map[string
 func (l *Linker) GetLayerPKGNames(allowDup bool, excludeDirs []string) (pkgNames []string, err error) {
 	fset := token.NewFileSet()
 	fpath := fmt.Sprintf("%s/src/%s/", l.GoPath, l.RepoPath)
+	if l.FullPath != "" {
+		fpath = l.FullPath
+	}
 	allDirs := []string{fpath}
 	var dirs []string
 	dirs, err = walkAround(fpath, excludeDirs)
