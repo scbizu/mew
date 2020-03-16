@@ -1,0 +1,36 @@
+# github.com/awalterschulze/gographviz v0.0.0-20190522210029-fa59802746ab
+## explicit
+github.com/awalterschulze/gographviz
+github.com/awalterschulze/gographviz/ast
+github.com/awalterschulze/gographviz/internal/errors
+github.com/awalterschulze/gographviz/internal/lexer
+github.com/awalterschulze/gographviz/internal/parser
+github.com/awalterschulze/gographviz/internal/token
+# github.com/inconshreveable/mousetrap v1.0.0
+## explicit
+github.com/inconshreveable/mousetrap
+# github.com/onsi/ginkgo v1.12.0
+## explicit
+# github.com/onsi/gomega v1.9.0
+## explicit
+# github.com/sirupsen/logrus v1.0.5
+## explicit
+github.com/sirupsen/logrus
+# github.com/spf13/cobra v0.0.2
+## explicit
+github.com/spf13/cobra
+# github.com/spf13/pflag v1.0.1
+## explicit
+github.com/spf13/pflag
+# github.com/stretchr/testify v1.5.1
+## explicit
+# golang.org/x/crypto v0.0.0-20180505025534-4ec37c66abab
+## explicit
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# gopkg.in/airbrake/gobrake.v2 v2.0.9
+## explicit
+# gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2
+## explicit
