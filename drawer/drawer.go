@@ -4,7 +4,7 @@ package drawer
 import (
 	"io/ioutil"
 	"os"
-	"strings"
+	"strconv"
 
 	"github.com/awalterschulze/gographviz"
 	"github.com/sirupsen/logrus"
@@ -20,13 +20,13 @@ const (
 // DrawWithSlice returns the DOT lang  of a slice
 func DrawWithSlice(baseNode string, pkgNames []string) (string, error) {
 	g := gographviz.NewGraph()
-	g.SetName(GraphName)
-	g.SetDir(true)
+	_ = g.SetName(GraphName)
+	_ = g.SetDir(true)
 	paresedNodeName := addQuotation(baseNode)
-	g.AddNode(GraphName, paresedNodeName, nil)
+	_ = g.AddNode(GraphName, paresedNodeName, nil)
 	for _, name := range pkgNames {
-		g.AddNode(GraphName, name, nil)
-		g.AddEdge(paresedNodeName, name, true, nil)
+		_ = g.AddNode(GraphName, addQuotation(name), nil)
+		_ = g.AddEdge(paresedNodeName, addQuotation(name), true, nil)
 	}
 	return g.String(), nil
 }
@@ -46,8 +46,8 @@ func DrawWithSliceAndSave(filename string, baseNode string, pkgNames []string) e
 // DrawWithMap returns DOT lang of a map
 func DrawWithMap(baseNode string, pkgMap map[string][]string) (string, error) {
 	g := gographviz.NewGraph()
-	g.SetName(GraphName)
-	g.SetDir(true)
+	_ = g.SetName(GraphName)
+	_ = g.SetDir(true)
 
 	drawTree(g, baseNode, pkgMap)
 
@@ -62,17 +62,15 @@ func drawTree(g *gographviz.Graph, base string, pkgMap map[string][]string) {
 		return
 	}
 
-	g.AddNode(GraphName, addQuotation(base), nil)
+	_ = g.AddNode(GraphName, addQuotation(base), nil)
 
 	for _, p := range ps {
-		g.AddNode(GraphName, addQuotation(p), nil)
+		_ = g.AddNode(GraphName, addQuotation(p), nil)
 		if err := g.AddEdge(addQuotation(base), addQuotation(p), true, nil); err != nil {
 			logrus.Error(err)
 		}
 		drawTree(g, p, pkgMap)
 	}
-
-	return
 
 }
 
@@ -89,15 +87,5 @@ func DrawWithMapAndSave(baseNode string, filename string, pkgMap map[string][]st
 }
 
 func addQuotation(node string) string {
-	bs := []byte{'"'}
-	for _, b := range []byte(node) {
-		bs = append(bs, b)
-	}
-	bs = append(bs, '"')
-	return addNAfterSlash(string(bs))
-}
-
-// addNAfterSlash enter the newline after /
-func addNAfterSlash(nodeName string) string {
-	return strings.Replace(nodeName, "/", "/\n", -1)
+	return strconv.Quote(node)
 }
