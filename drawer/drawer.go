@@ -2,6 +2,7 @@
 package drawer
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -18,10 +19,7 @@ const (
 )
 
 // DrawWithSlice returns the DOT lang  of a slice
-func DrawWithSlice(baseNode string, pkgNames []string) (string, error) {
-	g := gographviz.NewGraph()
-	_ = g.SetName(GraphName)
-	_ = g.SetDir(true)
+func DrawWithSlice(g *gographviz.Graph, baseNode string, pkgNames []string) (string, error) {
 	paresedNodeName := addQuotation(baseNode)
 	_ = g.AddNode(GraphName, paresedNodeName, nil)
 	for _, name := range pkgNames {
@@ -31,9 +29,45 @@ func DrawWithSlice(baseNode string, pkgNames []string) (string, error) {
 	return g.String(), nil
 }
 
+type DotTree struct {
+	g      *gographviz.Graph
+	buffer *bytes.Buffer
+}
+
+func NewDot() *DotTree {
+	g := gographviz.NewGraph()
+	g.SetName(GraphName)
+	g.SetDir(true)
+	return &DotTree{g: g, buffer: bytes.NewBufferString(g.String())}
+}
+
+func (d *DotTree) AddDep(baseNode string, pkgNames []string) error {
+	paresedNodeName := addQuotation(baseNode)
+	_ = d.g.AddNode(GraphName, paresedNodeName, nil)
+	for _, name := range pkgNames {
+		_ = d.g.AddNode(GraphName, addQuotation(name), nil)
+		_ = d.g.AddEdge(paresedNodeName, addQuotation(name), true, nil)
+	}
+	d.buffer.Reset()
+	if _, err := d.buffer.WriteString(d.g.String()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *DotTree) WriteFile(filename string) error {
+	if err := ioutil.WriteFile(filename, d.buffer.Bytes(), os.ModePerm); err != nil {
+		return err
+	}
+	return nil
+}
+
 // DrawWithSliceAndSave draws the grpah and save to current path by a slice
 func DrawWithSliceAndSave(filename string, baseNode string, pkgNames []string) error {
-	dotTree, err := DrawWithSlice(baseNode, pkgNames)
+	g := gographviz.NewGraph()
+	_ = g.SetName(GraphName)
+	_ = g.SetDir(true)
+	dotTree, err := DrawWithSlice(g, baseNode, pkgNames)
 	if err != nil {
 		return err
 	}

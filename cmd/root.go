@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/scbizu/mew/drawer"
 	"github.com/scbizu/mew/filter"
 	"github.com/scbizu/mew/linker"
+	"github.com/scylladb/go-set/strset"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -35,26 +37,62 @@ var excludeDirs []string
 var isShowJSON bool
 var dumpGraph string
 var deepMode bool
+var dir string
+var dirEx []string
+var short bool
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "mew",
 	Short: "mew - Show your Go repo related pkgs",
 	Long:  `mew - Show your Go repo related pkgs`,
-	Run: func(cmd *cobra.Command, args []string) {
-		l := linker.NewLinker(gopath, repoName)
-		if deepMode {
-			if jsonRes := handlePKGMap(l, excludeDirs, grep, dumpGraph, repoName, isShowJSON); jsonRes != "" {
-				fmt.Println(jsonRes)
-			}
-		} else {
-			if jsonRes := handlePKGSlice(l, excludeDirs, grep, dumpGraph, repoName, isShowJSON); jsonRes != "" {
-				fmt.Println(jsonRes)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		repoNames := []string{repoName}
+		if dir != "" {
+			repoNames = []string{}
+			s := strset.New(dirEx...)
+			// ignore the repoName
+			if err := filepath.Walk(dir, func(path string, info os.FileInfo, _ error) error {
+				if info.IsDir() && !s.Has(info.Name()) {
+					repoNames = append(repoNames, filepath.Clean(strings.TrimPrefix(path, gopath+"/src/")))
+				}
+				return nil
+			}); err != nil {
+				return err
 			}
 		}
-
-		return
+		d := drawer.NewDot()
+		for _, repoName := range repoNames {
+			l := linker.NewLinker(gopath, repoName)
+			if deepMode {
+				if jsonRes := handlePKGMap(l, excludeDirs, grep, dumpGraph, repoName, isShowJSON); jsonRes != "" {
+					fmt.Println(jsonRes)
+				}
+			} else {
+				pkgs, err := getpkgs(l, excludeDirs, grep, dumpGraph, repoName)
+				if err != nil {
+					return err
+				}
+				repoName = shortFunc()(repoName)
+				if err := d.AddDep(repoName, pkgs); err != nil {
+					return err
+				}
+			}
+		}
+		if err := d.WriteFile(dumpGraph); err != nil {
+			return err
+		}
+		return nil
 	},
+}
+
+func shortFunc() func(string) string {
+	return func(s string) string {
+		if short {
+			return filepath.Base(s)
+		}
+		return s
+	}
 }
 
 func handlePKGMap(l *linker.Linker, excludeDirs []string, grep string, graphName string, repo string, isShowJSON bool) string {
@@ -82,28 +120,19 @@ func handlePKGMap(l *linker.Linker, excludeDirs []string, grep string, graphName
 	return ""
 }
 
-func handlePKGSlice(l *linker.Linker, excludeDirs []string, grep string, graphName string, repo string, isShowJSON bool) string {
+func getpkgs(l *linker.Linker, excludeDirs []string, grep string, graphName string, repo string) ([]string, error) {
 	var pkgs []string
 	var err error
 	pkgs, err = l.GetLayerPKGNames(false, excludeDirs)
 	if err != nil {
-		logrus.Fatalln(err)
+		return nil, err
 	}
 	pkgFilter := filter.NewFilter(pkgs)
 	pkgs = pkgFilter.Grep(grep)
-
-	if err = drawer.DrawWithSliceAndSave(graphName, repo, pkgs); err != nil {
-		logrus.Fatalln(err.Error())
+	for index := range pkgs {
+		pkgs[index] = shortFunc()(pkgs[index])
 	}
-
-	if isShowJSON {
-		jsonRes, err := json.Marshal(pkgs)
-		if err != nil {
-			logrus.Fatalln(err)
-		}
-		return string(jsonRes)
-	}
-	return ""
+	return pkgs, nil
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
@@ -125,8 +154,11 @@ func init() {
 	}
 	RootCmd.Flags().StringVarP(&repoName, "repo", "r", "", "input repo name")
 	RootCmd.Flags().StringVarP(&grep, "grep", "g", "", "grep the pkg list")
+	RootCmd.Flags().StringVar(&dir, "dir", os.Getenv("GOPATH"), "the whole directory")
 	RootCmd.Flags().StringArrayVarP(&excludeDirs, "ed", "e", []string{"vendor", ".git"}, "exclude the dir")
+	RootCmd.Flags().StringArrayVar(&dirEx, "ex", []string{"vendor"}, "exclude the dir")
 	RootCmd.Flags().BoolVar(&isShowJSON, "json", false, "show json format")
+	RootCmd.Flags().BoolVar(&short, "short", false, "file base name")
 	RootCmd.Flags().BoolVar(&deepMode, "deep", false, "[Experimental feature]in deep mode,you will get all(include really all dependency) third party related pkg name")
 	RootCmd.Flags().StringVarP(&dumpGraph, "graph", "d", drawer.DefaultFileName, "dump graphviz graph")
 }
